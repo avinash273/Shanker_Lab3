@@ -402,8 +402,9 @@ public class ClientUI implements ActionListener {
             } else {
                 ClientRqst[6] += " (1-1) : " + TxtMsgField.getText();
                 client.sendMessage(ClientRqst);
-                ClientRqst2[6] += " (1-1) : " + TxtMsgField.getText();
-                client.sendMessage(ClientRqst2);
+                ClientRqst2[6] += " (1-n) : " + TxtMsgField.getText();
+                if (ClientRqst2[6] != ClientRqst[6])
+                    client.sendMessage(ClientRqst2);
             }
             TxtMsgField.setText("");
         } else if (ClientObj == ConnectBtn) {
@@ -445,8 +446,16 @@ public class ClientUI implements ActionListener {
     //This functions  is to get the client connected to server actively now
     public void updateClientList(String[] response) {
         String[] list = response[6].split(",");
+        String[] list2 = response[6].split(",");
+        for (int i = 0; i < list2.length; i++) {
+            System.out.println("List2: " + list2[i]);
+            if (list2[i].contains("BROADCAST")) {
+                list2[i] = "";
+                System.out.println("List2 at null: " + list2[i]);
+            }
+        }
         ClientMenu.setModel(new DefaultComboBoxModel<>(list));
-        ClientMenu2.setModel(new DefaultComboBoxModel<>(list));
+        ClientMenu2.setModel(new DefaultComboBoxModel<>(list2));
     }
 
 }
