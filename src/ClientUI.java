@@ -53,6 +53,21 @@ public class ClientUI implements ActionListener {
         }
         return false;
     }
+    //Message queueing for users
+    public void WriteToUserQueue(String username, String text) {
+        String UserQueueName = username+".txt";
+        try {
+            System.out.println("Check file exist: "+UserQueueName);
+            BufferedWriter UserQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
+            System.out.println("Text from textbox: "+text);
+            UserQueue.write(text);
+            UserQueue.close();
+            System.out.println("Successfully Wrote to user queue: " + UserQueueName);
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
+    }
 
     //https://stackoverflow.com/questions/5600422/method-to-find-string-inside-of-the-text-file-then-getting-the-following-line
     //https://stackoverflow.com/questions/3935791/find-and-replace-words-lines-in-a-file/3936452
@@ -385,6 +400,14 @@ public class ClientUI implements ActionListener {
             ClientRqst[4] = "Content-Length = " + TxtMsgField.getText().length();
             ClientRqst[5] = "\r\n";
             ClientRqst[6] = client.getUsername();
+
+            //queuing logic to first check is user is online or not to decide to write to queue or send message
+            boolean isClientOnline;
+            isClientOnline = checkOnline(client.getUsername());
+            if (true){
+                System.out.println("Entered To write for the file");
+                WriteToUserQueue(to,TxtMsgField.getText());
+            }
 
             String to2 = Objects.requireNonNull(ClientMenu2.getSelectedItem()).toString();
             ClientRqst2[0] = "POST HTTP/1.1";

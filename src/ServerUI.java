@@ -88,6 +88,7 @@ public class ServerUI implements ActionListener, WindowListener {
         FrameServer.getContentPane().setLayout(ServerLayout);
         ServerBtnStart.addActionListener(this);
     }
+
     //https://www.w3schools.com/java/java_files_create.asp
     //delete the cache file generated
     public void deleteOnline() throws IOException {
@@ -171,13 +172,19 @@ public class ServerUI implements ActionListener, WindowListener {
             try {
                 BufferedWriter userOnline = new BufferedWriter(new FileWriter("online.txt", true));
                 userOnline.write(username);
+                //Server creating a message queue cache file for each user
+                String UserQueueName = username + ".txt";
+                BufferedWriter UserMsgQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
+                UserMsgQueue.write("No Messages yet.");
                 userOnline.close();
+                UserMsgQueue.close();
                 System.out.println("Successfully wrote to the file.");
             } catch (IOException e) {
                 System.out.println("An error occurred.");
                 e.printStackTrace();
             }
         }
+
 
         //ArrayList for clients
         public ArrayList<multiThread> listClient = new ArrayList<>();
