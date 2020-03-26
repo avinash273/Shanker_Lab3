@@ -32,6 +32,8 @@ public class ClientUI implements ActionListener {
     JTextField TxtMsgField, UsrTxt;
     Client client;
     JButton StopBtn;
+    //Check message from server queue button
+    JButton CheckMsg;
     boolean alive;
 
     //https://stackoverflow.com/questions/5600422/method-to-find-string-inside-of-the-text-file-then-getting-the-following-lines
@@ -56,17 +58,16 @@ public class ClientUI implements ActionListener {
     }
 
 
-
     //Message queueing for users
     public void WriteToUserQueue(String FromUsername, String ToUsername, String MessageSent) {
-        String UserQueueName = ToUsername+".txt";
+        String UserQueueName = ToUsername + ".txt";
         try {
             //setting date field for logging
             SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             Date CurrDate = new Date();
-            System.out.println("Check file exist: "+UserQueueName);
+            System.out.println("Check file exist: " + UserQueueName);
             BufferedWriter UserQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
-            System.out.println("Text from textbox: "+MessageSent);
+            System.out.println("Text from textbox: " + MessageSent);
             //Write to Queue
             String Content = CurrDate + " " + FromUsername + ": " + MessageSent + "\n";
             UserQueue.write(Content);
@@ -237,9 +238,16 @@ public class ClientUI implements ActionListener {
         replyBtn = new JButton("Reply");
         replyBtn.setForeground(Color.BLUE);
         replyBtn.addActionListener(this);
+        //Connect to server push button
         ConnectBtn = new JButton("Connect");
         ConnectBtn.addActionListener(this);
         ConnectBtn.setForeground(Color.BLUE);
+
+        //Button to check message from server queue
+        CheckMsg = new JButton("Check Msg");
+        CheckMsg.addActionListener(this);
+        CheckMsg.setForeground(Color.BLUE);
+
         //Message typing field with column size set to 10
         TxtMsgField = new JTextField();
         TxtMsgField.setColumns(10);
@@ -287,7 +295,8 @@ public class ClientUI implements ActionListener {
                                         .addGroup(ClientLayout.createSequentialGroup()
                                                 .addComponent(ClientUsrnm)
                                                 .addComponent(UsrTxt, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                                .addComponent(ConnectBtn))
+                                                .addComponent(ConnectBtn)
+                                                .addComponent(CheckMsg))
                                         .addGroup(ClientLayout.createSequentialGroup()
                                                 .addComponent(PortNoLabel)
                                                 .addComponent(PortTxtNo, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -312,7 +321,8 @@ public class ClientUI implements ActionListener {
                                 .addGroup(ClientLayout.createParallelGroup(Alignment.BASELINE)
                                         .addComponent(PortNoLabel)
                                         .addComponent(PortTxtNo)
-                                        .addComponent(ConnectBtn))
+                                        .addComponent(ConnectBtn)
+                                        .addComponent(CheckMsg))
                                 .addGroup(ClientLayout.createParallelGroup(Alignment.BASELINE)
                                         .addComponent(TxtMsgField)
                                         .addComponent(replyBtn))
@@ -330,6 +340,7 @@ public class ClientUI implements ActionListener {
         ClientPane.setViewportView(SendMsg);
         ClientFrame.getContentPane().setLayout(ClientLayout);
         ConnectBtn.setEnabled(true);
+        CheckMsg.setEnabled(false);
         StopBtn.setEnabled(false);
         ClientBtn.setEnabled(false);
         replyBtn.setEnabled(false);
@@ -343,6 +354,7 @@ public class ClientUI implements ActionListener {
     //Check connection to server, if  unable to connect. Reset buttons
     void connectionFailed() {
         ConnectBtn.setEnabled(true);
+        CheckMsg.setEnabled(false);
         StopBtn.setEnabled(false);
         ClientBtn.setEnabled(false);
         TxtMsgField.setText("Usrnm");
@@ -356,6 +368,8 @@ public class ClientUI implements ActionListener {
         Object ClientObj = err.getSource();
         String[] ClientRqst = new String[7];
         String[] ClientRqst2 = new String[7];
+        //Implementing Message Queue
+        String[] MessageQueueing = new String[7];
         //Logout button for the client
         if (ClientObj == StopBtn) {
             //Headers for client request
@@ -374,6 +388,7 @@ public class ClientUI implements ActionListener {
             }
             client.sendMessage(ClientRqst);
             ConnectBtn.setEnabled(true);
+            CheckMsg.setEnabled(false);
             StopBtn.setEnabled(false);
             ClientBtn.setEnabled(false);
             TxtMsgField.setEditable(true);
@@ -413,9 +428,9 @@ public class ClientUI implements ActionListener {
             //queuing logic to first check is user is online or not to decide to write to queue or send message
             boolean isClientOnline;
             isClientOnline = checkOnline(to);
-            if (!isClientOnline){
+            if (!isClientOnline) {
                 System.out.println("Entered To write for the file");
-                WriteToUserQueue(client.getUsername(),to,TxtMsgField.getText());
+                WriteToUserQueue(client.getUsername(), to, TxtMsgField.getText());
             }
 
             String to2 = Objects.requireNonNull(ClientMenu2.getSelectedItem()).toString();
@@ -439,6 +454,45 @@ public class ClientUI implements ActionListener {
                     client.sendMessage(ClientRqst2);
             }
             TxtMsgField.setText("");
+        } else if (ClientObj == CheckMsg) {
+            //queuing logic to first check is user is online or not to decide to write to queue or send message
+            boolean isClientOnline;
+            String QueueFile = client.getUsername();
+            QueueFile += ".txt";
+
+            isClientOnline = checkOnline(client.getUsername());
+            if (isClientOnline) {
+                String TestMessage = "\nChecking if working";
+                System.out.println("Entered To write for the file");
+                MessageQueueing[0] = "POST HTTP/1.1";
+                MessageQueueing[1] = "Host: localhost";
+                MessageQueueing[2] = "User-Agent: " + client.getUsername();
+                MessageQueueing[3] = "Content-Type: message";
+                MessageQueueing[4] = "Content-Length = " + TestMessage.length();
+                MessageQueueing[5] = "\r\n";
+                MessageQueueing[6] = client.getUsername();
+
+                https://stackoverflow.com/questions/5868369/how-to-read-a-large-text-file-line-by-line-using-java
+                //Code to read from message queue line by line from the server
+                try (BufferedReader br = new BufferedReader(new FileReader(QueueFile))) {
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        System.out.println("\nStarted Reading from queue");
+                        System.out.println(line);
+                        MessageQueueing[6] += ": " + line +'\n';
+                    }
+                    //https://stackoverflow.com/questions/6994518/how-to-delete-the-content-of-text-file-without-deleting-itself
+                    //Remove contents from the queue
+                    PrintWriter pw = new PrintWriter(QueueFile);
+                    pw.close();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                client.sendMessage(MessageQueueing);
+            }
         } else if (ClientObj == ConnectBtn) {
             String clientUsrnm = UsrTxt.getText().trim();
             String portNumber = PortTxtNo.getText().trim();
@@ -467,6 +521,7 @@ public class ClientUI implements ActionListener {
             TxtMsgField.setText("");
             alive = true;
             ConnectBtn.setEnabled(false);
+            CheckMsg.setEnabled(true);
             StopBtn.setEnabled(true);
             ClientBtn.setEnabled(true);
             PortTxtNo.setEditable(false);
