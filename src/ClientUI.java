@@ -11,6 +11,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.charset.*;
 import java.nio.file.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.GroupLayout.Alignment;
@@ -53,16 +54,24 @@ public class ClientUI implements ActionListener {
         }
         return false;
     }
+
+
+
     //Message queueing for users
-    public void WriteToUserQueue(String username, String text) {
-        String UserQueueName = username+".txt";
+    public void WriteToUserQueue(String FromUsername, String ToUsername, String MessageSent) {
+        String UserQueueName = ToUsername+".txt";
         try {
+            //setting date field for logging
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            Date CurrDate = new Date();
             System.out.println("Check file exist: "+UserQueueName);
             BufferedWriter UserQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
-            System.out.println("Text from textbox: "+text);
-            UserQueue.write(text);
+            System.out.println("Text from textbox: "+MessageSent);
+            //Write to Queue
+            String Content = CurrDate + " " + FromUsername + ": " + MessageSent + "\n";
+            UserQueue.write(Content);
             UserQueue.close();
-            System.out.println("Successfully Wrote to user queue: " + UserQueueName);
+            System.out.println("Successfully Wrote to user queue: " + Content);
         } catch (IOException e) {
             System.out.println("An error occurred.");
             e.printStackTrace();
@@ -403,10 +412,10 @@ public class ClientUI implements ActionListener {
 
             //queuing logic to first check is user is online or not to decide to write to queue or send message
             boolean isClientOnline;
-            isClientOnline = checkOnline(client.getUsername());
-            if (true){
+            isClientOnline = checkOnline(to);
+            if (!isClientOnline){
                 System.out.println("Entered To write for the file");
-                WriteToUserQueue(to,TxtMsgField.getText());
+                WriteToUserQueue(client.getUsername(),to,TxtMsgField.getText());
             }
 
             String to2 = Objects.requireNonNull(ClientMenu2.getSelectedItem()).toString();
@@ -420,12 +429,12 @@ public class ClientUI implements ActionListener {
 
             //broadcast message type
             if (ClientRqst[2].contains("broadcast")) {
-                ClientRqst[6] += " (1-n): " + TxtMsgField.getText();
+                ClientRqst[6] += ": " + TxtMsgField.getText();
                 client.sendMessage(ClientRqst);
             } else {
-                ClientRqst[6] += " (1-1) : " + TxtMsgField.getText();
+                ClientRqst[6] += ": " + TxtMsgField.getText();
                 client.sendMessage(ClientRqst);
-                ClientRqst2[6] += " (1-n) : " + TxtMsgField.getText();
+                ClientRqst2[6] += ": " + TxtMsgField.getText();
                 if (ClientRqst2[6] != ClientRqst[6])
                     client.sendMessage(ClientRqst2);
             }

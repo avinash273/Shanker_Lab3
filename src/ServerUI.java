@@ -94,6 +94,14 @@ public class ServerUI implements ActionListener, WindowListener {
     public void deleteOnline() throws IOException {
         Path fileToDeletePath = Paths.get("online.txt");
         Files.delete(fileToDeletePath);
+     //https://www.dummies.com/programming/java/how-to-write-java-code-to-delete-several-files-at-once/
+        //This part of the code is to delete file once you stop the server
+        File folder = new File(".");
+        for (File file : folder.listFiles()) {
+            if (file.getName().endsWith(".txt")) {
+                file.delete();
+            }
+        }
     }
 
 
@@ -173,12 +181,12 @@ public class ServerUI implements ActionListener, WindowListener {
                 BufferedWriter userOnline = new BufferedWriter(new FileWriter("online.txt", true));
                 userOnline.write(username);
                 //Server creating a message queue cache file for each user
-                String UserQueueName = username + ".txt";
-                BufferedWriter UserMsgQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
-                UserMsgQueue.write("No Messages yet.");
+                //String UserQueueName = username + ".txt";
+                //BufferedWriter UserMsgQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
+                //UserMsgQueue.write("No Messages yet.");
                 userOnline.close();
-                UserMsgQueue.close();
-                System.out.println("Successfully wrote to the file.");
+                //UserMsgQueue.close();
+                //System.out.println("Successfully wrote to the file.");
             } catch (IOException e) {
                 System.out.println("An error occurred.");
                 e.printStackTrace();
