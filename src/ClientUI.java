@@ -3,6 +3,7 @@ Avinash Shanker
 Roll No: 1001668570
 ID: AXS8570
 University of Texas, Arlington
+Distributed Systems Lab2
 */
 
 //References are included in the code
@@ -11,7 +12,8 @@ import java.io.*;
 import java.net.*;
 import java.nio.charset.*;
 import java.nio.file.*;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.GroupLayout.Alignment;
@@ -35,6 +37,14 @@ public class ClientUI implements ActionListener {
     //Check message from server queue button
     JButton CheckMsg;
     boolean alive;
+
+    //Setting date for the Client logs and connections
+    //https://www.javatpoint.com/java-get-current-date
+    public String GetTimeNow() {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        return dtf.format(now);
+    }
 
     //https://stackoverflow.com/questions/5600422/method-to-find-string-inside-of-the-text-file-then-getting-the-following-lines
     public boolean checkOnline(String username) {
@@ -62,14 +72,11 @@ public class ClientUI implements ActionListener {
     public void WriteToUserQueue(String FromUsername, String ToUsername, String MessageSent) {
         String UserQueueName = ToUsername + ".txt";
         try {
-            //setting date field for logging
-            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            Date CurrDate = new Date();
             System.out.println("Check file exist: " + UserQueueName);
             BufferedWriter UserQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
             System.out.println("Text from textbox: " + MessageSent);
             //Write to Queue
-            String Content = CurrDate + " " + FromUsername + ": " + MessageSent + "\n";
+            String Content = GetTimeNow() + " " + FromUsername + ": " + MessageSent + "\n";
             UserQueue.write(Content);
             UserQueue.close();
             System.out.println("Successfully Wrote to user queue: " + Content);
@@ -158,7 +165,9 @@ public class ClientUI implements ActionListener {
 
         //print message on console function
         public void PrintMsg(String value) {
-            ClientInterface.updateClientLog(value);
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+            LocalDateTime now = LocalDateTime.now();
+            ClientInterface.updateClientLog(dtf.format(now) + ": "+ value);
         }
 
         //send message to server
@@ -348,7 +357,7 @@ public class ClientUI implements ActionListener {
 
 
     public void updateClientLog(String value) {
-        SendMsg.append("\n" + value);
+        SendMsg.append("\n" + GetTimeNow() + ": " + value);
     }
 
     //Check connection to server, if  unable to connect. Reset buttons
@@ -472,14 +481,15 @@ public class ClientUI implements ActionListener {
                 MessageQueueing[5] = "\r\n";
                 MessageQueueing[6] = client.getUsername();
 
-                https://stackoverflow.com/questions/5868369/how-to-read-a-large-text-file-line-by-line-using-java
+                https:
+//stackoverflow.com/questions/5868369/how-to-read-a-large-text-file-line-by-line-using-java
                 //Code to read from message queue line by line from the server
                 try (BufferedReader br = new BufferedReader(new FileReader(QueueFile))) {
                     String line;
                     while ((line = br.readLine()) != null) {
                         System.out.println("\nStarted Reading from queue");
                         System.out.println(line);
-                        MessageQueueing[6] += ": " + line +'\n';
+                        MessageQueueing[6] += ": " + line + '\n';
                     }
                     //https://stackoverflow.com/questions/6994518/how-to-delete-the-content-of-text-file-without-deleting-itself
                     //Remove contents from the queue

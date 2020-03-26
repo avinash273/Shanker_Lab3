@@ -3,6 +3,7 @@ Avinash Shanker
 Roll No: 1001668570
 ID: AXS8570
 University of Texas, Arlington
+Distributed Systems Lab2
 */
 
 /* This Code starts the server GUI, run this code first before starting client. */
@@ -15,13 +16,16 @@ import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.*;
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.concurrent.BlockingDeque;
 import javax.swing.*;
 import javax.swing.GroupLayout.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
+
 
 //Server GUI which implements ActionListener responsible for setting up server and communicate with client
 public class ServerUI implements ActionListener, WindowListener {
@@ -30,7 +34,17 @@ public class ServerUI implements ActionListener, WindowListener {
     JFrame FrameServer;
     JTextArea ServerLog;
     JButton ServerBtnStart;
+    JButton LogButton;
     JTextField PrtNoFrame;
+
+    //Setting date for the sever logs and connections
+    //https://www.javatpoint.com/java-get-current-date
+    public String GetTimeNow() {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        return dtf.format(now);
+    }
+
 
     //Server GUI components like buttons textboxes like start and stop server are initialized here
     //This function also setup up the Server GUI frame
@@ -51,6 +65,10 @@ public class ServerUI implements ActionListener, WindowListener {
         ServerBtnStart = new JButton("Start");
         ServerBtnStart.setForeground(Color.BLUE);
 
+        //Creating a log button for the server pane
+        LogButton = new JButton("Log");
+        LogButton.setForeground(Color.BLUE);
+
         JScrollPane ServerLogPane = new JScrollPane();
 
         //Line above Text box created for displaying server log 
@@ -69,7 +87,8 @@ public class ServerUI implements ActionListener, WindowListener {
                                         .addGroup(ServerLayout.createSequentialGroup()
                                                 .addComponent(PortLabel)
                                                 .addComponent(PrtNoFrame, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                                .addComponent(ServerBtnStart))))
+                                                .addComponent(ServerBtnStart)
+                                                .addComponent(LogButton))))
         );
         //Server window pane layout vertical settings
         ServerLayout.setVerticalGroup(
@@ -78,7 +97,8 @@ public class ServerUI implements ActionListener, WindowListener {
                                 .addGroup(ServerLayout.createParallelGroup(Alignment.BASELINE)
                                         .addComponent(PrtNoFrame)
                                         .addComponent(PortLabel)
-                                        .addComponent(ServerBtnStart))
+                                        .addComponent(ServerBtnStart)
+                                        .addComponent(LogButton))
                                 .addComponent(LogLabel)
                                 .addComponent(ServerLogPane, GroupLayout.PREFERRED_SIZE, 150, GroupLayout.PREFERRED_SIZE)
                                 .addContainerGap(300, Short.MAX_VALUE))
@@ -88,6 +108,7 @@ public class ServerUI implements ActionListener, WindowListener {
         ServerLogPane.setViewportView(ServerLog);
         FrameServer.getContentPane().setLayout(ServerLayout);
         ServerBtnStart.addActionListener(this);
+        LogButton.addActionListener(this);
     }
 
     //https://www.w3schools.com/java/java_files_create.asp
@@ -95,7 +116,7 @@ public class ServerUI implements ActionListener, WindowListener {
     public void deleteOnline() throws IOException {
         Path fileToDeletePath = Paths.get("online.txt");
         Files.delete(fileToDeletePath);
-     //https://www.dummies.com/programming/java/how-to-write-java-code-to-delete-several-files-at-once/
+        //https://www.dummies.com/programming/java/how-to-write-java-code-to-delete-several-files-at-once/
         //This part of the code is to delete file once you stop the server
         File folder = new File(".");
         for (File file : folder.listFiles()) {
@@ -130,17 +151,32 @@ public class ServerUI implements ActionListener, WindowListener {
     public void WriteToUserQueue(String ToUsername, String MessageSent) {
         String UserQueueName = ToUsername + ".txt";
         try {
-            //setting date field for logging
-            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            Date CurrDate = new Date();
             System.out.println("Check file exist: " + UserQueueName);
             BufferedWriter UserQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
             System.out.println("Text from textbox: " + MessageSent);
             //Write to Queue
-            String Content = CurrDate + " " + ": " + MessageSent + "\n";
+            String Content = MessageSent + "\n";
             UserQueue.write(Content);
             UserQueue.close();
             System.out.println("Successfully Wrote to user queue: " + Content);
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
+    }
+
+    //Message queueing for users
+    //https://mkyong.com/java/how-to-write-to-file-in-java-bufferedwriter-example/
+    public void WriteServerLog(String MessageSent) {
+        String ServerLog = "Server.log";
+        try {
+            System.out.println("Check file exist: " + ServerLog);
+            BufferedWriter PutServerLog = new BufferedWriter(new FileWriter(ServerLog, true));
+            //Write to Queue
+            String Content = GetTimeNow() + ": " + MessageSent + "\n";
+            PutServerLog.write(Content);
+            PutServerLog.close();
+            System.out.println("Successfully wrote to server log: " + Content);
         } catch (IOException e) {
             System.out.println("An error occurred.");
             e.printStackTrace();
@@ -164,6 +200,7 @@ public class ServerUI implements ActionListener, WindowListener {
             PrtNoFrame.setEditable(true);
             //Server start button setting
             ServerBtnStart.setText("Start");
+            LogButton.setText("Log");
         } else {
             //Start server on port number entered by user
             int portNo = 0;
@@ -181,6 +218,7 @@ public class ServerUI implements ActionListener, WindowListener {
                 new ServerRunning().start();
 
                 ServerBtnStart.setText("Stop");
+                LogButton.setText("Log");
                 //Making port number non editable after server is set to start
                 PrtNoFrame.setEditable(false);
             }
@@ -190,7 +228,9 @@ public class ServerUI implements ActionListener, WindowListener {
 
     //Set server log onto the console pane
     void updateLog(String message) {
-        ServerLog.append(message);
+        ServerLog.append(GetTimeNow() + ": " + message);
+        WriteServerLog(message);
+        System.out.println("Server log from updateLog: " + message);
     }
 
     //implementing run() function
@@ -204,6 +244,7 @@ public class ServerUI implements ActionListener, WindowListener {
 
             // Server start button
             ServerBtnStart.setText("Start");
+            LogButton.setText("Log");
             PrtNoFrame.setEditable(true);
             updateLog(formatter.format(CurrDate) + ": Server connection interrupted/closed.\n");
             server = null;
@@ -254,9 +295,6 @@ public class ServerUI implements ActionListener, WindowListener {
         //continiously listen to the ServerSocket for connection requests from clients
         public void runServer() {
             try {
-                //https://www.javatpoint.com/java-get-current-CurrDate
-                SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-                Date CurrDate = new Date();
                 // ServerSocket used by server
                 ServerSocket serverSocket = new ServerSocket(portNo);
                 //delete old log file if present and start new one
@@ -267,7 +305,7 @@ public class ServerUI implements ActionListener, WindowListener {
                 //Keep waiting for get request
                 while (SetServerTrue) {
                     //Set alert that we are waiting for for clients on given port no
-                    printConsole(formatter.format(CurrDate) + ": Server Started on portNo " + portNo + "\n");
+                    printConsole("Server started on port: " + portNo + "\n");
                     //accepting server connection
                     Socket ServerSocket = serverSocket.accept();
 
@@ -311,7 +349,9 @@ public class ServerUI implements ActionListener, WindowListener {
 
         //Printconsole is used to display log server console
         public void printConsole(String txt) {
-            ServerInterface.ServerLog.append(txt);
+            ServerInterface.ServerLog.append(GetTimeNow() + ": " + txt);
+            WriteServerLog(txt);
+            System.out.println("Printing server log for debug: " + txt);
         }
 
         //function to stop the server on the given port no
@@ -339,8 +379,6 @@ public class ServerUI implements ActionListener, WindowListener {
 
             //Setting constructor for multiThread class
             multiThread(Socket ServerSocket) {
-                SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-                Date CurrDate = new Date();
                 //increment ID so that we can remove clients when disconnecting
                 SetClientID = ++IDclient;
                 this.ServerSocket = ServerSocket;
@@ -351,8 +389,8 @@ public class ServerUI implements ActionListener, WindowListener {
                     //Read the user name entered by the user
                     ClientUsername = (String) iStream.readObject();
                     writer("\n" + ClientUsername);
-                    //Show that connection is alive or not
-                    printConsole(formatter.format(CurrDate) + " : " + ClientUsername + " has alive.");
+                    //Show that connection is connected or not
+                    printConsole(ClientUsername + " has connected now.");
 
                 } catch (IOException err) {
                     //catch if unable to create I/O streams
@@ -399,16 +437,12 @@ public class ServerUI implements ActionListener, WindowListener {
                     try {
                         //get request of client
                         getRequest = (String[]) iStream.readObject();
-                        Date CurrDate = new Date();
-                        String strDateFormat = "DD/MM/YYYY hh:mm:ss a";
-                        DateFormat dateFormat = new SimpleDateFormat(strDateFormat);
-                        String formattedDate = dateFormat.format(CurrDate);
 
                         //Making up response messages
                         getResponse[0] = "HTTP/1.1 200 OK";
                         getResponse[1] = "server: localhost";
                         getResponse[2] = "Content-type: message";
-                        getResponse[3] = "Date: " + formattedDate;
+                        getResponse[3] = "Date: " + GetTimeNow();
                         getResponse[4] = "Content-Length: " + getRequest[5].length();
                         getResponse[5] = "\r\n";
                         getResponse[6] = "";
@@ -454,10 +488,10 @@ public class ServerUI implements ActionListener, WindowListener {
 
 
                             //To check if the user is online or not. If offline, then write to message queue.
-                            boolean notOnline = false;
+                            boolean notOnline;
                             notOnline = checkOnline(getRequest[2]);
 
-                            if (notOnline){
+                            if (notOnline) {
                                 System.out.println("Writing to the user queue.");
                                 WriteToUserQueue(getRequest[2], getRequest[6]);
                             }
