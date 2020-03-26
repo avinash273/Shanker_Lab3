@@ -19,6 +19,7 @@ import java.text.*;
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.concurrent.BlockingDeque;
 import javax.swing.*;
 import javax.swing.GroupLayout.*;
 
@@ -101,6 +102,48 @@ public class ServerUI implements ActionListener, WindowListener {
             if (file.getName().endsWith(".txt")) {
                 file.delete();
             }
+        }
+    }
+
+    //https://stackoverflow.com/questions/5600422/method-to-find-string-inside-of-the-text-file-then-getting-the-following-lines
+    public boolean checkOnline(String username) {
+        var file = new File("online.txt");
+
+        try {
+            Scanner scanner = new Scanner(file);
+
+            //now read the file line by line...
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                System.out.println(line);
+                if (line.contains(username)) {
+                    return false;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            //handle this
+        }
+        return false;
+    }
+
+    //Message queueing for users
+    public void WriteToUserQueue(String ToUsername, String MessageSent) {
+        String UserQueueName = ToUsername + ".txt";
+        try {
+            //setting date field for logging
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            Date CurrDate = new Date();
+            System.out.println("Check file exist: " + UserQueueName);
+            BufferedWriter UserQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
+            System.out.println("Text from textbox: " + MessageSent);
+            //Write to Queue
+            String Content = CurrDate + " " + ": " + MessageSent + "\n";
+            UserQueue.write(Content);
+            UserQueue.close();
+            System.out.println("Successfully Wrote to user queue: " + Content);
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
         }
     }
 
@@ -406,7 +449,18 @@ public class ServerUI implements ActionListener, WindowListener {
                         }
 
                         //if client sends a 1-1 message
+                        //This includes logi
                         else if (getRequest[0].contains("POST") && !(getRequest[2].contains("BROADCAST"))) {
+
+
+                            //To check if the user is online or not. If offline, then write to message queue.
+                            boolean notOnline = false;
+                            notOnline = checkOnline(getRequest[2]);
+
+                            if (notOnline){
+                                System.out.println("Writing to the user queue.");
+                                WriteToUserQueue(getRequest[2], getRequest[6]);
+                            }
 
                             //unparsed HTTP getRequest
                             StringBuilder RequestHTTP = new StringBuilder();
