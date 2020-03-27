@@ -283,11 +283,12 @@ public class ServerUI implements ActionListener, WindowListener {
                 BufferedWriter userOnline = new BufferedWriter(new FileWriter("online.txt", true));
                 userOnline.write(username);
                 //Server creating a message queue cache file for each user
-                //String UserQueueName = username + ".txt";
-                //BufferedWriter UserMsgQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
-                //UserMsgQueue.write("No Messages yet.");
+                username = username.replaceAll("\\s+","");
+                String UserQueueName = username + ".txt";
+                BufferedWriter UserMsgQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
+                UserMsgQueue.write("");
                 userOnline.close();
-                //UserMsgQueue.close();
+                UserMsgQueue.close();
                 //System.out.println("Successfully wrote to the file.");
             } catch (IOException e) {
                 System.out.println("An error occurred.");

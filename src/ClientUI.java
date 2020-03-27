@@ -73,7 +73,15 @@ public class ClientUI implements ActionListener {
         String UserQueueName = ToUsername + ".txt";
         try {
             System.out.println("Check file exist: " + UserQueueName);
-            BufferedWriter UserQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
+            //https://beginnersbook.com/2014/01/how-to-write-to-file-in-java-using-bufferedwriter/
+            File file = new File(UserQueueName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+
+            FileWriter fw = new FileWriter(file, true);
+            BufferedWriter UserQueue = new BufferedWriter(fw);
+            //BufferedWriter UserQueue = new BufferedWriter(new FileWriter(UserQueueName, true));
             System.out.println("Text from textbox: " + MessageSent);
             //Write to Queue
             String Content = GetTimeNow() + " " + FromUsername + ": " + MessageSent + "\n";
