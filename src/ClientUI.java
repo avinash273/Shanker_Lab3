@@ -461,12 +461,12 @@ public class ClientUI implements ActionListener {
 
             //broadcast message type
             if (ClientRqst[2].contains("broadcast")) {
-                ClientRqst[6] += ": " + TxtMsgField.getText()+"\n";
+                ClientRqst[6] += ": " + TxtMsgField.getText() + "\n";
                 client.sendMessage(ClientRqst);
             } else {
-                ClientRqst[6] += ": " + TxtMsgField.getText()+"\n";
+                ClientRqst[6] += ": " + TxtMsgField.getText() + "\n";
                 client.sendMessage(ClientRqst);
-                ClientRqst2[6] += ": " + TxtMsgField.getText()+"\n";
+                ClientRqst2[6] += ": " + TxtMsgField.getText() + "\n";
                 if (ClientRqst2[6] != ClientRqst[6])
                     client.sendMessage(ClientRqst2);
             }
@@ -491,24 +491,31 @@ public class ClientUI implements ActionListener {
 
                 //https://stackoverflow.com/questions/5868369/how-to-read-a-large-text-file-line-by-line-using-java
                 //Code to read from message queue line by line from the server
-                try (BufferedReader br = new BufferedReader(new FileReader(QueueFile))) {
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        System.out.println("\nStarted Reading from queue");
-                        System.out.println(line);
-                        MessageQueueing[6] += ": " + line + '\n';
-                    }
-                    //https://stackoverflow.com/questions/6994518/how-to-delete-the-content-of-text-file-without-deleting-itself
-                    //Remove contents from the queue
-                    PrintWriter pw = new PrintWriter(QueueFile);
-                    pw.close();
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
 
-                client.sendMessage(MessageQueueing);
+                File file = new File(QueueFile);
+                if (file.length() == 0) {
+                    MessageQueueing[6] += ": No messages." + '\n';
+                    client.sendMessage(MessageQueueing);
+                } else {
+                    try (BufferedReader br = new BufferedReader(new FileReader(QueueFile))) {
+                        String line;
+                        while ((line = br.readLine()) != null) {
+                            System.out.println("\nStarted Reading from queue");
+                            System.out.println(line);
+                            MessageQueueing[6] += ": " + line + '\n';
+                        }
+                        //https://stackoverflow.com/questions/6994518/how-to-delete-the-content-of-text-file-without-deleting-itself
+                        //Remove contents from the queue
+                        PrintWriter pw = new PrintWriter(QueueFile);
+                        pw.close();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    client.sendMessage(MessageQueueing);
+                }
             }
         } else if (ClientObj == ConnectBtn) {
             String clientUsrnm = UsrTxt.getText().trim();
