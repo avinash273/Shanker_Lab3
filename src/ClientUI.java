@@ -93,7 +93,7 @@ public class ClientUI implements ActionListener {
         Path path = Paths.get("online.txt");
         Charset charset = StandardCharsets.UTF_8;
         String content = Files.readString(path, charset);
-        content = content.replaceAll(username, "");
+        content = content.replaceAll(username, "NonEmptyLine");
         Files.write(path, content.getBytes(charset));
     }
 
@@ -167,7 +167,7 @@ public class ClientUI implements ActionListener {
         public void PrintMsg(String value) {
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
             LocalDateTime now = LocalDateTime.now();
-            ClientInterface.updateClientLog(dtf.format(now) + ": "+ value);
+            ClientInterface.updateClientLog(value);
         }
 
         //send message to server
@@ -388,7 +388,7 @@ public class ClientUI implements ActionListener {
             ClientRqst[3] = "Content-Type: Text";
             ClientRqst[4] = "Content-Length =  0";
             ClientRqst[5] = "\r\n";
-            ClientRqst[6] = " ";
+            ClientRqst[6] = "";
 
             try {
                 DeleteOnline(client.getUsername());
@@ -412,7 +412,7 @@ public class ClientUI implements ActionListener {
             ClientRqst[3] = "Content-Type: client-list";
             ClientRqst[4] = "Content-Length =  0";
             ClientRqst[5] = "\r\n";
-            ClientRqst[6] = " ";
+            ClientRqst[6] = "";
             client.sendMessage(ClientRqst);
 
             ClientRqst2[0] = "GET Clients HTTP/1.1";
@@ -421,7 +421,7 @@ public class ClientUI implements ActionListener {
             ClientRqst2[3] = "Content-Type: client-list";
             ClientRqst2[4] = "Content-Length =  0";
             ClientRqst2[5] = "\r\n";
-            ClientRqst2[6] = " ";
+            ClientRqst2[6] = "";
             client.sendMessage(ClientRqst);
         } else if (ClientObj == replyBtn) {
             //check broadcast type of one to n or one to all type
@@ -453,12 +453,12 @@ public class ClientUI implements ActionListener {
 
             //broadcast message type
             if (ClientRqst[2].contains("broadcast")) {
-                ClientRqst[6] += ": " + TxtMsgField.getText();
+                ClientRqst[6] += ": " + TxtMsgField.getText()+"\n";
                 client.sendMessage(ClientRqst);
             } else {
-                ClientRqst[6] += ": " + TxtMsgField.getText();
+                ClientRqst[6] += ": " + TxtMsgField.getText()+"\n";
                 client.sendMessage(ClientRqst);
-                ClientRqst2[6] += ": " + TxtMsgField.getText();
+                ClientRqst2[6] += ": " + TxtMsgField.getText()+"\n";
                 if (ClientRqst2[6] != ClientRqst[6])
                     client.sendMessage(ClientRqst2);
             }
@@ -481,8 +481,7 @@ public class ClientUI implements ActionListener {
                 MessageQueueing[5] = "\r\n";
                 MessageQueueing[6] = client.getUsername();
 
-                https:
-//stackoverflow.com/questions/5868369/how-to-read-a-large-text-file-line-by-line-using-java
+                //https://stackoverflow.com/questions/5868369/how-to-read-a-large-text-file-line-by-line-using-java
                 //Code to read from message queue line by line from the server
                 try (BufferedReader br = new BufferedReader(new FileReader(QueueFile))) {
                     String line;

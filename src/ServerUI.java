@@ -21,8 +21,6 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.GroupLayout.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
 
@@ -51,7 +49,7 @@ public class ServerUI implements ActionListener, WindowListener {
     public void initialize() {
         FrameServer = new JFrame();
         //setting server frame'RequestString window size
-        FrameServer.setBounds(100, 100, 395, 250);
+        FrameServer.setBounds(100, 100, 500, 500);
         FrameServer.setTitle("Server Console");
         FrameServer.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         //Textfield to enter port no
@@ -82,7 +80,7 @@ public class ServerUI implements ActionListener, WindowListener {
                 ServerLayout.createParallelGroup(Alignment.LEADING)
                         .addGroup(ServerLayout.createSequentialGroup()
                                 .addGroup(ServerLayout.createParallelGroup(Alignment.LEADING)
-                                        .addComponent(ServerLogPane, GroupLayout.PREFERRED_SIZE, 390, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(ServerLogPane, GroupLayout.PREFERRED_SIZE, 490, GroupLayout.PREFERRED_SIZE)
                                         .addComponent(LogLabel)
                                         .addGroup(ServerLayout.createSequentialGroup()
                                                 .addComponent(PortLabel)
@@ -100,7 +98,7 @@ public class ServerUI implements ActionListener, WindowListener {
                                         .addComponent(ServerBtnStart)
                                         .addComponent(LogButton))
                                 .addComponent(LogLabel)
-                                .addComponent(ServerLogPane, GroupLayout.PREFERRED_SIZE, 150, GroupLayout.PREFERRED_SIZE)
+                                .addComponent(ServerLogPane, GroupLayout.PREFERRED_SIZE, 400, GroupLayout.PREFERRED_SIZE)
                                 .addContainerGap(300, Short.MAX_VALUE))
         );
         //Text box created for displaying server log 
@@ -118,12 +116,12 @@ public class ServerUI implements ActionListener, WindowListener {
         Files.delete(fileToDeletePath);
         //https://www.dummies.com/programming/java/how-to-write-java-code-to-delete-several-files-at-once/
         //This part of the code is to delete file once you stop the server
-        File folder = new File(".");
-        for (File file : folder.listFiles()) {
-            if (file.getName().endsWith(".txt")) {
-                file.delete();
-            }
-        }
+//        File folder = new File(".");
+//        for (File file : folder.listFiles()) {
+//            if (file.getName().endsWith(".txt")) {
+//                file.delete();
+//            }
+//        }
     }
 
     //https://stackoverflow.com/questions/5600422/method-to-find-string-inside-of-the-text-file-then-getting-the-following-lines
@@ -186,6 +184,8 @@ public class ServerUI implements ActionListener, WindowListener {
 
     @Override
     public void actionPerformed(ActionEvent err) {
+        Object ServerObj = err.getSource();
+
         boolean done = false;
         //Check if server is running and stop
         if (server != null) {
@@ -200,7 +200,7 @@ public class ServerUI implements ActionListener, WindowListener {
             PrtNoFrame.setEditable(true);
             //Server start button setting
             ServerBtnStart.setText("Start");
-            LogButton.setText("Log");
+
         } else {
             //Start server on port number entered by user
             int portNo = 0;
@@ -218,7 +218,6 @@ public class ServerUI implements ActionListener, WindowListener {
                 new ServerRunning().start();
 
                 ServerBtnStart.setText("Stop");
-                LogButton.setText("Log");
                 //Making port number non editable after server is set to start
                 PrtNoFrame.setEditable(false);
             }
@@ -231,22 +230,41 @@ public class ServerUI implements ActionListener, WindowListener {
         ServerLog.append(GetTimeNow() + ": " + message);
         WriteServerLog(message);
         System.out.println("Server log from updateLog: " + message);
+
+        if (message.contains("connected now") || message.contains("logged out")) {
+            //https://stackoverflow.com/questions/5868369/how-to-read-a-large-text-file-line-by-line-using-java
+            //Code to read from message queue line by line from the server
+            try (BufferedReader br = new BufferedReader(new FileReader("online.txt"))) {
+                String line;
+                ServerLog.append("--------------------------" + "\n");
+                ServerLog.append("Online Users:" + "\n");
+                ServerLog.append("--------------------------" + "\n");
+                while ((line = br.readLine()) != null) {
+                    if (!line.contains("NonEmptyLine")) {
+                        if(!(line =="\n"))
+                        ServerLog.append(line + "\n");
+                    }
+                }
+                ServerLog.append("--------------------------" + "\n");
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     //implementing run() function
     class ServerRunning extends Thread {
         public void run() {
-            //setting date field for logging
-            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            Date CurrDate = new Date();
             //run server
             server.runServer();
 
             // Server start button
             ServerBtnStart.setText("Start");
-            LogButton.setText("Log");
             PrtNoFrame.setEditable(true);
-            updateLog(formatter.format(CurrDate) + ": Server connection interrupted/closed.\n");
+            updateLog("Server connection interrupted/closed.\n");
             server = null;
         }
     }
@@ -350,6 +368,7 @@ public class ServerUI implements ActionListener, WindowListener {
         //Printconsole is used to display log server console
         public void printConsole(String txt) {
             ServerInterface.ServerLog.append(GetTimeNow() + ": " + txt);
+            //Write all server logs abouts connections and disconnections to a persistent log file
             WriteServerLog(txt);
             System.out.println("Printing server log for debug: " + txt);
         }
@@ -483,14 +502,13 @@ public class ServerUI implements ActionListener, WindowListener {
                         }
 
                         //if client sends a 1-1 message
-                        //This includes logi
+                        //This includes logging to as persistent user queue if the user is not found online
                         else if (getRequest[0].contains("POST") && !(getRequest[2].contains("BROADCAST"))) {
-
-
                             //To check if the user is online or not. If offline, then write to message queue.
                             boolean notOnline;
                             notOnline = checkOnline(getRequest[2]);
 
+                            //write to queue if user is offline and store persistently until back online
                             if (notOnline) {
                                 System.out.println("Writing to the user queue.");
                                 WriteToUserQueue(getRequest[2], getRequest[6]);
@@ -520,6 +538,9 @@ public class ServerUI implements ActionListener, WindowListener {
                             }
                             ServerInterface.updateLog(RequestHTTP.toString());
                             String[] LogoutUsr = getRequest[2].split(":");
+                            String UserLoggedOut = RequestHTTP.toString();
+                            UserLoggedOut = UserLoggedOut.substring(44, 49);
+                            ServerInterface.updateLog(UserLoggedOut + " logged out\n");
                             listClient.removeIf(ClientNames -> LogoutUsr[1].trim().equalsIgnoreCase(ClientNames.getUserName()));
                         }
                     } catch (IOException err) {
