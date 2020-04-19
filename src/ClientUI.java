@@ -94,9 +94,13 @@ public class ClientUI implements ActionListener {
         }
     }
 
-    //https://stackoverflow.com/questions/5600422/method-to-find-string-inside-of-the-text-file-then-getting-the-following-line
-    //https://stackoverflow.com/questions/3935791/find-and-replace-words-lines-in-a-file/3936452
-    //This code is used to delete the users who logged out from temp file, its invoked when user logs out
+
+    /**
+     * @param username
+     * @throws IOException //https://stackoverflow.com/questions/5600422/method-to-find-string-inside-of-the-text-file-then-getting-the-following-line
+     *                     //https://stackoverflow.com/questions/3935791/find-and-replace-words-lines-in-a-file/3936452
+     *                     //This code is used to delete the users who logged out from temp file, its invoked when user logs out
+     */
     public void DeleteOnline(String username) throws IOException {
         Path path = Paths.get("online.txt");
         Charset charset = StandardCharsets.UTF_8;
@@ -105,125 +109,155 @@ public class ClientUI implements ActionListener {
         Files.write(path, content.getBytes(charset));
     }
 
-    //https://github.com/SrihariShastry/socketProgramming/blob/master/src/lab1/Client.java
-    public static class Client {
-        //Client class keepup socket and I/O  transfers with server
-        public ObjectInputStream iStream;
-        public ObjectOutputStream oStream;
-        public Socket clientSocket;
-        public ClientUI ClientInterface;
-        public String clientUsrnm;
-        public int portNo;
 
-        //assigning client  variables
-        Client(int portNo, String clientUsrnm, ClientUI ClientInterface) {
-            this.portNo = portNo;
-            this.clientUsrnm = clientUsrnm;
-            this.ClientInterface = ClientInterface;
+//    public void VectorClock(char fromClock, char toClock) {
+//
+//        String clockName = "./VectorClocks" + fromClock + ".txt";
+//
+//        try {
+//            BufferedReader in = new BufferedReader(
+//                    new FileReader(clockName));
+//            String str;
+//
+//            while ((str = in.readLine()) != null) {
+//                String[] ar = str.split(",");
+//            }
+//            in.close();
+//        } catch (IOException e) {
+//            System.out.println("File Read Error");
+//        }
+//
+//        FileWriter fw = new FileWriter(clockName, true);
+//        BufferedWriter UserQueue = new BufferedWriter(fw);
+//        //Write to Queue
+//        String Content =
+//                UserQueue.write(Content);
+//        UserQueue.close();
+//        System.out.println("Successfully Wrote to user queue: " + Content);
+//    }
+//
+//}
+
+//https://github.com/SrihariShastry/socketProgramming/blob/master/src/lab1/Client.java
+public static class Client {
+    //Client class keepup socket and I/O  transfers with server
+    public ObjectInputStream iStream;
+    public ObjectOutputStream oStream;
+    public Socket clientSocket;
+    public ClientUI ClientInterface;
+    public String clientUsrnm;
+    public int portNo;
+
+    //assigning client  variables
+    Client(int portNo, String clientUsrnm, ClientUI ClientInterface) {
+        this.portNo = portNo;
+        this.clientUsrnm = clientUsrnm;
+        this.ClientInterface = ClientInterface;
+    }
+
+
+    //get  function for client username
+    public String getUsername() {
+        return clientUsrnm;
+    }
+
+    //Socket creation function
+    public boolean startClient() {
+        //create new socket on localhost and given port number
+        try {
+            String server = "localhost";
+            clientSocket = new Socket(server, portNo);
+        }
+        //catch error if unable to create socket
+        catch (Exception err) {
+            PrintMsg("Unable to connect to server: " + err);
+            return false;
+        }
+        //Display connection message
+        String value = "Connected now " + clientSocket.getInetAddress() + ":" + clientSocket.getPort();
+        PrintMsg(value);
+
+        //Reply button enabled after connection is set
+        ClientInterface.replyBtn.setEnabled(true);
+        //Setting up I/O streams
+        try {
+            iStream = new ObjectInputStream(clientSocket.getInputStream());
+            oStream = new ObjectOutputStream(clientSocket.getOutputStream());
+        } catch (IOException err) {
+            PrintMsg("Unable to create I/O stream " + err);
+            return false;
         }
 
+        //handle server response
+        new SResponse().start();
+        //send client output stream to server
+        try {
+            oStream.writeObject(clientUsrnm);
+        } catch (IOException err) {
+            //unable connect print message to client interface
+            PrintMsg("Unable to login " + err);
+            //close connection
+            CloseConnection();
+            return false;
+        }
+        //else connection was live
+        return true;
+    }
 
-        //get  function for client username
-        public String getUsername() {
-            return clientUsrnm;
+    //print message on console function
+    public void PrintMsg(String value) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        ClientInterface.updateClientLog(value);
+    }
+
+    //send message to server
+    void sendMessage(String[] value) {
+        try {
+            oStream.writeObject(value);
+        } catch (IOException err) {
+            PrintMsg("Unable to write to server " + err);
+        }
+    }
+
+    //Close sockets and I/O streams
+    public void CloseConnection() {
+        try {
+            if (iStream != null) iStream.close();
+            if (oStream != null) oStream.close();
+            if (clientSocket != null) clientSocket.close();
+        } catch (Exception err) {
+            err.printStackTrace();
         }
 
-        //Socket creation function
-        public boolean startClient() {
-            //create new socket on localhost and given port number
-            try {
-                String server = "localhost";
-                clientSocket = new Socket(server, portNo);
-            }
-            //catch error if unable to create socket
-            catch (Exception err) {
-                PrintMsg("Unable to connect to server: " + err);
-                return false;
-            }
-            //Display connection message
-            String value = "Connected now " + clientSocket.getInetAddress() + ":" + clientSocket.getPort();
-            PrintMsg(value);
+    }
 
-            //Reply button enabled after connection is set
-            ClientInterface.replyBtn.setEnabled(true);
-            //Setting up I/O streams
-            try {
-                iStream = new ObjectInputStream(clientSocket.getInputStream());
-                oStream = new ObjectOutputStream(clientSocket.getOutputStream());
-            } catch (IOException err) {
-                PrintMsg("Unable to create I/O stream " + err);
-                return false;
-            }
-
-            //handle server response
-            new SResponse().start();
-            //send client output stream to server
-            try {
-                oStream.writeObject(clientUsrnm);
-            } catch (IOException err) {
-                //unable connect print message to client interface
-                PrintMsg("Unable to login " + err);
-                //close connection
-                CloseConnection();
-                return false;
-            }
-            //else connection was live
-            return true;
-        }
-
-        //print message on console function
-        public void PrintMsg(String value) {
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-            LocalDateTime now = LocalDateTime.now();
-            ClientInterface.updateClientLog(value);
-        }
-
-        //send message to server
-        void sendMessage(String[] value) {
-            try {
-                oStream.writeObject(value);
-            } catch (IOException err) {
-                PrintMsg("Unable to write to server " + err);
-            }
-        }
-
-        //Close sockets and I/O streams
-        public void CloseConnection() {
-            try {
-                if (iStream != null) iStream.close();
-                if (oStream != null) oStream.close();
-                if (clientSocket != null) clientSocket.close();
-            } catch (Exception err) {
-                err.printStackTrace();
-            }
-
-        }
-
-        //Server response function N thread created for each client
-        class SResponse extends Thread {
-            public void run() {
-                while (true) {
-                    try {
-                        String[] response = (String[]) iStream.readObject();
-                        //get the response type of message
-                        String msgType = response[2].substring(13);
-                        if (msgType.trim().equalsIgnoreCase("message")) {
-                            ClientInterface.updateClientLog(response[6]);
-                        } else {
-                            ClientInterface.updateClientList(response);
-                        }
-                    } catch (Exception err) {
-                        //Server offline
-                        PrintMsg("Server is offline: " + err);
-                        if (ClientInterface != null)
-                            ClientInterface.connectionFailed();
-                        break;
+    //Server response function N thread created for each client
+    class SResponse extends Thread {
+        public void run() {
+            while (true) {
+                try {
+                    String[] response = (String[]) iStream.readObject();
+                    //get the response type of message
+                    String msgType = response[2].substring(13);
+                    if (msgType.trim().equalsIgnoreCase("message")) {
+                        ClientInterface.updateClientLog(response[6]);
+                    } else {
+                        ClientInterface.updateClientList(response);
                     }
-
+                } catch (Exception err) {
+                    //Server offline
+                    PrintMsg("Server is offline: " + err);
+                    if (ClientInterface != null)
+                        ClientInterface.connectionFailed();
+                    break;
                 }
+
             }
         }
     }
+
+}
 
     //Main function of client which first call the client UI class
     public static void main(String[] args) {
