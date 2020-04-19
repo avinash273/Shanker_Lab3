@@ -3,7 +3,7 @@ Avinash Shanker
 Roll No: 1001668570
 ID: AXS8570
 University of Texas, Arlington
-Distributed Systems Lab2
+Distributed Systems Lab3
 */
 
 /* This Code starts the server GUI, run this code first before starting client. */

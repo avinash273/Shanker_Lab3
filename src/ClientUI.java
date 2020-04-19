@@ -3,7 +3,7 @@ Avinash Shanker
 Roll No: 1001668570
 ID: AXS8570
 University of Texas, Arlington
-Distributed Systems Lab2
+Distributed Systems Lab3
 */
 
 //References are included in the code
@@ -20,6 +20,7 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Timer;
 
 //This Action listner class if used for client UI
 public class ClientUI implements ActionListener {
@@ -109,155 +110,267 @@ public class ClientUI implements ActionListener {
         Files.write(path, content.getBytes(charset));
     }
 
+    int[] ReadVectorClock(char ClockRealName) {
+        String clockName = "./VectorClocks/" + ClockRealName + ".txt";
+        int[] ClockValue = {0, 0, 0};
 
-//    public void VectorClock(char fromClock, char toClock) {
-//
-//        String clockName = "./VectorClocks" + fromClock + ".txt";
-//
-//        try {
-//            BufferedReader in = new BufferedReader(
-//                    new FileReader(clockName));
-//            String str;
-//
-//            while ((str = in.readLine()) != null) {
-//                String[] ar = str.split(",");
-//            }
-//            in.close();
-//        } catch (IOException e) {
-//            System.out.println("File Read Error");
-//        }
-//
-//        FileWriter fw = new FileWriter(clockName, true);
-//        BufferedWriter UserQueue = new BufferedWriter(fw);
-//        //Write to Queue
-//        String Content =
-//                UserQueue.write(Content);
-//        UserQueue.close();
-//        System.out.println("Successfully Wrote to user queue: " + Content);
-//    }
-//
-//}
-
-//https://github.com/SrihariShastry/socketProgramming/blob/master/src/lab1/Client.java
-public static class Client {
-    //Client class keepup socket and I/O  transfers with server
-    public ObjectInputStream iStream;
-    public ObjectOutputStream oStream;
-    public Socket clientSocket;
-    public ClientUI ClientInterface;
-    public String clientUsrnm;
-    public int portNo;
-
-    //assigning client  variables
-    Client(int portNo, String clientUsrnm, ClientUI ClientInterface) {
-        this.portNo = portNo;
-        this.clientUsrnm = clientUsrnm;
-        this.ClientInterface = ClientInterface;
-    }
-
-
-    //get  function for client username
-    public String getUsername() {
-        return clientUsrnm;
-    }
-
-    //Socket creation function
-    public boolean startClient() {
-        //create new socket on localhost and given port number
+        //https://stackoverflow.com/questions/18838781/converting-string-array-to-an-integer-array
         try {
-            String server = "localhost";
-            clientSocket = new Socket(server, portNo);
-        }
-        //catch error if unable to create socket
-        catch (Exception err) {
-            PrintMsg("Unable to connect to server: " + err);
-            return false;
-        }
-        //Display connection message
-        String value = "Connected now " + clientSocket.getInetAddress() + ":" + clientSocket.getPort();
-        PrintMsg(value);
+            BufferedReader in = new BufferedReader(
+                    new FileReader(clockName));
+            String str;
+            String[] ClockTimeArray = new String[0];
 
-        //Reply button enabled after connection is set
-        ClientInterface.replyBtn.setEnabled(true);
-        //Setting up I/O streams
-        try {
-            iStream = new ObjectInputStream(clientSocket.getInputStream());
-            oStream = new ObjectOutputStream(clientSocket.getOutputStream());
-        } catch (IOException err) {
-            PrintMsg("Unable to create I/O stream " + err);
-            return false;
+            while ((str = in.readLine()) != null) {
+                ClockTimeArray = str.split(",");
+            }
+
+            ClockValue[0] = Integer.parseInt(ClockTimeArray[0]);
+            ClockValue[1] = Integer.parseInt(ClockTimeArray[1]);
+            ClockValue[2] = Integer.parseInt(ClockTimeArray[2]);
+            in.close();
+        } catch (IOException e) {
+            System.out.println("File Read Error");
         }
 
-        //handle server response
-        new SResponse().start();
-        //send client output stream to server
-        try {
-            oStream.writeObject(clientUsrnm);
-        } catch (IOException err) {
-            //unable connect print message to client interface
-            PrintMsg("Unable to login " + err);
-            //close connection
-            CloseConnection();
-            return false;
-        }
-        //else connection was live
-        return true;
+        return ClockValue;
     }
 
-    //print message on console function
-    public void PrintMsg(String value) {
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-        LocalDateTime now = LocalDateTime.now();
-        ClientInterface.updateClientLog(value);
+    void VectorClockIncrement(char clockname) throws IOException {
+        int[] ClockValue = ReadVectorClock(clockname);
+        if (clockname == 'A')
+            ClockValue[0] += 1;
+        else if (clockname == 'B')
+            ClockValue[1] += 1;
+        else if (clockname == 'C')
+            ClockValue[2] += 1;
+        WriteVectorClock(clockname, ClockValue);
     }
 
-    //send message to server
-    void sendMessage(String[] value) {
-        try {
-            oStream.writeObject(value);
-        } catch (IOException err) {
-            PrintMsg("Unable to write to server " + err);
+
+    void VectorClockAlgorithm(char clock1, char clock2) throws IOException {
+        VectorClockIncrement(clock2);
+
+        int[] ClockValue1 = ReadVectorClock(clock1);
+        int[] ClockValue2 = ReadVectorClock(clock2);
+
+        if (clock1 == 'A') {
+            ClockValue1[0] += 1;
+            if (ClockValue1[1] < ClockValue2[1]) {
+                ClockValue1[1] = ClockValue2[1];
+
+            } else if (ClockValue1[2] < ClockValue2[2]) {
+                ClockValue1[2] = ClockValue2[2];
+            }
+
         }
-    }
 
-    //Close sockets and I/O streams
-    public void CloseConnection() {
-        try {
-            if (iStream != null) iStream.close();
-            if (oStream != null) oStream.close();
-            if (clientSocket != null) clientSocket.close();
-        } catch (Exception err) {
-            err.printStackTrace();
+        if (clock1 == 'B') {
+            ClockValue1[1] += 1;
+
+            if (ClockValue1[0] < ClockValue2[0]) {
+                ClockValue1[0] = ClockValue2[0];
+
+            } else if (ClockValue1[2] < ClockValue2[2]) {
+                ClockValue1[2] = ClockValue2[2];
+            }
+
         }
 
+        if (clock1 == 'C') {
+            ClockValue1[2] += 1;
+
+            if (ClockValue1[1] < ClockValue2[1]) {
+                ClockValue1[1] = ClockValue2[1];
+
+            } else if (ClockValue1[0] < ClockValue2[0]) {
+                ClockValue1[0] = ClockValue2[0];
+            }
+
+        }
+
+        WriteVectorClock(clock1, ClockValue1);
+
     }
 
-    //Server response function N thread created for each client
-    class SResponse extends Thread {
-        public void run() {
-            while (true) {
-                try {
-                    String[] response = (String[]) iStream.readObject();
-                    //get the response type of message
-                    String msgType = response[2].substring(13);
-                    if (msgType.trim().equalsIgnoreCase("message")) {
-                        ClientInterface.updateClientLog(response[6]);
-                    } else {
-                        ClientInterface.updateClientList(response);
-                    }
-                } catch (Exception err) {
-                    //Server offline
-                    PrintMsg("Server is offline: " + err);
-                    if (ClientInterface != null)
-                        ClientInterface.connectionFailed();
-                    break;
-                }
 
+    void WriteVectorClock(char ClockRealName, int[] ClockValue) throws IOException {
+        String ClockName = "./VectorClocks/" + ClockRealName + ".txt";
+        FileWriter fw = new FileWriter(ClockName, false);
+        BufferedWriter UserQueue = new BufferedWriter(fw);
+        //Write to Queue
+        String Content = ClockValue[0] + "," + ClockValue[1] + "," + ClockValue[2];
+        UserQueue.write(Content);
+        UserQueue.close();
+    }
+
+    void PrintClock(char clockname) {
+        int[] ClockValue = ReadVectorClock(clockname);
+        if (clockname == 'A')
+            System.out.println("Clock" + clockname + ":" + Arrays.toString(ClockValue));
+        else if (clockname == 'B')
+            System.out.println("Clock" + clockname + ":" + Arrays.toString(ClockValue));
+        else if (clockname == 'C')
+            System.out.println("Clock" + clockname + ":" + Arrays.toString(ClockValue));
+    }
+
+
+    //https://github.com/SrihariShastry/socketProgramming/blob/master/src/lab1/Client.java
+    public class Client {
+        //Client class keep up socket and I/O  transfers with server
+        public ObjectInputStream iStream;
+        public ObjectOutputStream oStream;
+        public Socket clientSocket;
+        public ClientUI ClientInterface;
+        public String clientUsrnm;
+        public int portNo;
+
+        //assigning client  variables
+        Client(int portNo, String clientUsrnm, ClientUI ClientInterface) {
+            this.portNo = portNo;
+            this.clientUsrnm = clientUsrnm;
+            this.ClientInterface = ClientInterface;
+        }
+
+
+        //get  function for client username
+        public String getUsername() {
+            return clientUsrnm;
+        }
+
+        //Socket creation function
+        public boolean startClient() {
+            //create new socket on localhost and given port number
+            try {
+                String server = "localhost";
+                clientSocket = new Socket(server, portNo);
+            }
+            //catch error if unable to create socket
+            catch (Exception err) {
+                PrintMsg("Unable to connect to server: " + err);
+                return false;
+            }
+            //Display connection message
+            String value = "Connected now " + clientSocket.getInetAddress() + ":" + clientSocket.getPort();
+            PrintMsg(value);
+
+            //Reply button enabled after connection is set
+            ClientInterface.replyBtn.setEnabled(true);
+            //Setting up I/O streams
+            try {
+                iStream = new ObjectInputStream(clientSocket.getInputStream());
+                oStream = new ObjectOutputStream(clientSocket.getOutputStream());
+            } catch (IOException err) {
+                PrintMsg("Unable to create I/O stream " + err);
+                return false;
+            }
+
+            //handle server response
+            new SResponse().start();
+            //send client output stream to server
+            try {
+                oStream.writeObject(clientUsrnm);
+            } catch (IOException err) {
+                //unable connect print message to client interface
+                PrintMsg("Unable to login " + err);
+                //close connection
+                CloseConnection();
+                return false;
+            }
+            //else connection was live
+            return true;
+        }
+
+        //print message on console function
+        public void PrintMsg(String value) {
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+            LocalDateTime now = LocalDateTime.now();
+            ClientInterface.updateClientLog(value);
+        }
+
+        //send message to server
+        void sendMessage(String[] value) {
+            try {
+                oStream.writeObject(value);
+            } catch (IOException err) {
+                PrintMsg("Unable to write to server " + err);
             }
         }
-    }
 
-}
+        //Close sockets and I/O streams
+        public void CloseConnection() {
+            try {
+                if (iStream != null) iStream.close();
+                if (oStream != null) oStream.close();
+                if (clientSocket != null) clientSocket.close();
+            } catch (Exception err) {
+                err.printStackTrace();
+            }
+
+        }
+
+        //Server response function N thread created for each client
+        class SResponse extends Thread {
+            public void run() {
+
+                while (true) {
+
+                    TimerTask task = new TimerTask() {
+
+                        @Override
+                        public void run() {
+                            System.out.println("hey bro asshole");
+                            char random_clientA = new Random().nextBoolean() ? 'B' : 'C';
+                            char random_clientB = new Random().nextBoolean() ? 'A' : 'C';
+                            char random_clientC = new Random().nextBoolean() ? 'A' : 'B';
+
+                            try {
+                                VectorClockAlgorithm('A', random_clientA);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
+                            try {
+                                VectorClockAlgorithm('B', random_clientB);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
+                            try {
+                                VectorClockAlgorithm('C', random_clientC);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
+
+                        }
+                    };
+
+                    Timer timer = new Timer();
+                    timer.schedule(task, new Date(), 90000);
+
+                    try {
+                        String[] response = (String[]) iStream.readObject();
+                        //get the response type of message
+                        String msgType = response[2].substring(13);
+                        if (msgType.trim().equalsIgnoreCase("message")) {
+                            ClientInterface.updateClientLog(response[6]);
+                        } else {
+                            ClientInterface.updateClientList(response);
+                        }
+                    } catch (Exception err) {
+                        //Server offline
+                        PrintMsg("Server is offline: " + err);
+                        if (ClientInterface != null)
+                            ClientInterface.connectionFailed();
+                        break;
+                    }
+
+                }
+            }
+        }
+
+    }
 
     //Main function of client which first call the client UI class
     public static void main(String[] args) {
@@ -304,7 +417,7 @@ public static class Client {
         TxtMsgField.setColumns(10);
         UsrTxt = new JTextField();
         //setting up more buttons and text fields
-        UsrTxt.setText("user");
+        UsrTxt.setText("A/B/C");
         UsrTxt.setColumns(10);
         JLabel ClientUsrnm = new JLabel(" Username");
         ClientUsrnm.setForeground(Color.BLUE);
@@ -475,6 +588,15 @@ public static class Client {
             ClientRqst[4] = "Content-Length = " + TxtMsgField.getText().length();
             ClientRqst[5] = "\r\n";
             ClientRqst[6] = client.getUsername();
+
+            System.out.println("Print value of ClientRqst[6].charAt(0): " + ClientRqst[6].charAt(0));
+
+            try {
+                VectorClockAlgorithm(to.charAt(0), ClientRqst[6].charAt(0));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
 
             //queuing logic to first check is user is online or not to decide to write to queue or send message
             boolean isClientOnline;
