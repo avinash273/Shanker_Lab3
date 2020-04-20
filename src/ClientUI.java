@@ -319,7 +319,7 @@ public class ClientUI implements ActionListener {
 
                         @Override
                         public void run() {
-                            System.out.println("hey bro asshole");
+                            System.out.println("Sent Vector Clock Randomly");
                             char random_clientA = new Random().nextBoolean() ? 'B' : 'C';
                             char random_clientB = new Random().nextBoolean() ? 'A' : 'C';
                             char random_clientC = new Random().nextBoolean() ? 'A' : 'B';
