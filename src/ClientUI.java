@@ -1,11 +1,11 @@
-/*
-Avinash Shanker
-Roll No: 1001668570
-ID: AXS8570
-University of Texas, Arlington
-Distributed Systems Lab3
-Vector Clocks
-*/
+/**
+ * Avinash Shanker
+ * Roll No: 1001668570
+ * ID: AXS8570
+ * University of Texas, Arlington
+ * Distributed Systems Lab3
+ * Vector Clocks
+ */
 
 //References are included in the code
 
@@ -389,46 +389,48 @@ public class ClientUI implements ActionListener {
                     /**
                      * This is task created for randomly pining and sending it vector clock to other two users
                      */
-                    TimerTask task = new TimerTask() {
+                    if (checkOnline("A") && checkOnline("B") && checkOnline("C")) {
+                        TimerTask task = new TimerTask() {
 
-                        @Override
-                        public void run() {
-                            System.out.println("Sent Vector Clock Randomly");
-                            /**
-                             * here for each client A, B and C a random client will chosen and will send the vector  clock to it
-                             */
-                            char random_clientA = new Random().nextBoolean() ? 'B' : 'C';
-                            char random_clientB = new Random().nextBoolean() ? 'A' : 'C';
-                            char random_clientC = new Random().nextBoolean() ? 'A' : 'B';
+                            @Override
+                            public void run() {
+                                System.out.println("Sent Vector Clock Randomly");
+                                /**
+                                 * here for each client A, B and C a random client will chosen and will send the vector  clock to it
+                                 */
+                                char random_clientA = new Random().nextBoolean() ? 'B' : 'C';
+                                char random_clientB = new Random().nextBoolean() ? 'A' : 'C';
+                                char random_clientC = new Random().nextBoolean() ? 'A' : 'B';
 
-                            try {
-                                VectorClockAlgorithm('A', random_clientA);
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                                try {
+                                    VectorClockAlgorithm('A', random_clientA);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+
+                                try {
+                                    VectorClockAlgorithm('B', random_clientB);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+
+                                try {
+                                    VectorClockAlgorithm('C', random_clientC);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+
+
                             }
+                        };
 
-                            try {
-                                VectorClockAlgorithm('B', random_clientB);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                        Timer timer = new Timer();
+                        /**
+                         * the clock is set for a timer of 10seconds after which it will send the vector time clock
+                         */
 
-                            try {
-                                VectorClockAlgorithm('C', random_clientC);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-
-
-                        }
-                    };
-
-                    Timer timer = new Timer();
-                    /**
-                     * the clock is set for a timer of 10seconds after which it will send the vector time clock
-                     */
-                    timer.schedule(task, new Date(), 10000);
-
+                        timer.schedule(task, new Date(), 10000);
+                    }
                     try {
                         String[] response = (String[]) iStream.readObject();
                         //get the response type of message
@@ -697,23 +699,26 @@ public class ClientUI implements ActionListener {
             ClientRqst2[5] = "\r\n";
             ClientRqst2[6] = client.getUsername();
 
-            //broadcast message type
-            if (ClientRqst[2].contains("broadcast")) {
-                ClientRqst[6] += ": " + TxtMsgField.getText() + "\n";
-                client.sendMessage(ClientRqst);
-            } else {
-                ClientRqst[6] += ": " + TxtMsgField.getText() + "\n";
-                client.sendMessage(ClientRqst);
-                ClientRqst2[6] += ": " + TxtMsgField.getText() + "\n";
-                if (ClientRqst2[6] != ClientRqst[6])
-                    client.sendMessage(ClientRqst2);
-            }
-            TxtMsgField.setText("");
             /**
              * prinitng the vector clock after each reply to the user panel
              */
             String vectorName = client.getUsername();
+            String toVector = to;
+            int[] ClockValueTo = ReadVectorClock(toVector.charAt(0));
             int[] ClockValue = ReadVectorClock(vectorName.charAt(0));
+
+            //broadcast message type
+            if (ClientRqst[2].contains("broadcast")) {
+                ClientRqst[6] += " :Clock" + toVector.charAt(0) + ": " + Arrays.toString(ClockValueTo) + ": " + TxtMsgField.getText() + "\n";
+                client.sendMessage(ClientRqst);
+            } else {
+                ClientRqst[6] += " :Clock" + toVector.charAt(0) + ": " + Arrays.toString(ClockValueTo) + ": " + TxtMsgField.getText() + "\n";
+                client.sendMessage(ClientRqst);
+                ClientRqst2[6] += " :Clock" + toVector.charAt(0) + ": " + Arrays.toString(ClockValueTo) + ": " + TxtMsgField.getText() + "\n";
+                if (ClientRqst2[6] != ClientRqst[6])
+                    client.sendMessage(ClientRqst2);
+            }
+            TxtMsgField.setText("");
             client.PrintMsg("Clock" + vectorName.charAt(0) + ":" + Arrays.toString(ClockValue));
 
         } else if (ClientObj == CheckMsg) {
