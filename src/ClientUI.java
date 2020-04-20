@@ -4,6 +4,7 @@ Roll No: 1001668570
 ID: AXS8570
 University of Texas, Arlington
 Distributed Systems Lab3
+Vector Clocks
 */
 
 //References are included in the code
@@ -23,6 +24,10 @@ import java.awt.event.*;
 import java.util.Timer;
 
 //This Action listner class if used for client UI
+
+/**
+ * This is the main client UI class used as a action listener
+ */
 public class ClientUI implements ActionListener {
     //Jframe for client interface
     JFrame ClientFrame;
@@ -41,6 +46,11 @@ public class ClientUI implements ActionListener {
 
     //Setting date for the Client logs and connections
     //https://www.javatpoint.com/java-get-current-date
+
+    /***
+     * This function used to get the current time so that, logs can be printed with the time.
+     * @return time
+     */
     public String GetTimeNow() {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
         LocalDateTime now = LocalDateTime.now();
@@ -48,6 +58,12 @@ public class ClientUI implements ActionListener {
     }
 
     //https://stackoverflow.com/questions/5600422/method-to-find-string-inside-of-the-text-file-then-getting-the-following-lines
+
+    /***
+     * This fucntions is used to check which users are online now
+     * @param username paramenter is the what enetered by user, for this lab3 it is A, B or C only
+     * @return
+     */
     public boolean checkOnline(String username) {
         var file = new File("online.txt");
 
@@ -70,6 +86,14 @@ public class ClientUI implements ActionListener {
 
 
     //Message queueing for users
+
+    /**
+     * This functions is used to write function to user queue incase he logs out
+     *
+     * @param FromUsername
+     * @param ToUsername
+     * @param MessageSent
+     */
     public void WriteToUserQueue(String FromUsername, String ToUsername, String MessageSent) {
         String UserQueueName = ToUsername + ".txt";
         try {
@@ -110,8 +134,19 @@ public class ClientUI implements ActionListener {
         Files.write(path, content.getBytes(charset));
     }
 
+    /**
+     * This function is to read vector clock values  created for each  user namely A, B and C
+     * This function  returns the a integer array for clock value [0,0,0]
+     *
+     * @param ClockRealName
+     * @return
+     */
     int[] ReadVectorClock(char ClockRealName) {
         String clockName = "./VectorClocks/" + ClockRealName + ".txt";
+        //initializing the clock value
+        // ClockValue[0] = A
+        // ClockValue[1] = B  
+        // ClockValue[2] = C
         int[] ClockValue = {0, 0, 0};
 
         //https://stackoverflow.com/questions/18838781/converting-string-array-to-an-integer-array
@@ -121,10 +156,10 @@ public class ClientUI implements ActionListener {
             String str;
             String[] ClockTimeArray = new String[0];
 
+            //read and split the file and 
             while ((str = in.readLine()) != null) {
                 ClockTimeArray = str.split(",");
             }
-
             ClockValue[0] = Integer.parseInt(ClockTimeArray[0]);
             ClockValue[1] = Integer.parseInt(ClockTimeArray[1]);
             ClockValue[2] = Integer.parseInt(ClockTimeArray[2]);
@@ -132,10 +167,17 @@ public class ClientUI implements ActionListener {
         } catch (IOException e) {
             System.out.println("File Read Error");
         }
-
+        //given the clock value back
         return ClockValue;
     }
 
+    /**
+     * This function is used to increment the current clock each time event occurs at the user.
+     * This function  returns the a integer array for clock value [0,0,0]
+     *
+     * @param clockname is  the user name A,B,C one of these
+     * @throws IOException
+     */
     void VectorClockIncrement(char clockname) throws IOException {
         int[] ClockValue = ReadVectorClock(clockname);
         if (clockname == 'A')
@@ -147,15 +189,24 @@ public class ClientUI implements ActionListener {
         WriteVectorClock(clockname, ClockValue);
     }
 
-
+    /**
+     * This function is where  vector clock algorithm is implement
+     *
+     * @param clock1 where  the event is occuring
+     * @param clock2 where the event is sent to
+     * @throws IOException
+     */
     void VectorClockAlgorithm(char clock1, char clock2) throws IOException {
         VectorClockIncrement(clock2);
-
+        //where the event is occuring
         int[] ClockValue1 = ReadVectorClock(clock1);
+        //where the event is sent to
         int[] ClockValue2 = ReadVectorClock(clock2);
 
+        //check if this clock A so that only its value can be incremented otherwise
         if (clock1 == 'A') {
             ClockValue1[0] += 1;
+            //if the value at clock2 is greater than at clock1 assign value of clock2
             if (ClockValue1[1] < ClockValue2[1]) {
                 ClockValue1[1] = ClockValue2[1];
 
@@ -165,9 +216,10 @@ public class ClientUI implements ActionListener {
 
         }
 
+        //check if this clock B so that only its value can be incremented otherwise
         if (clock1 == 'B') {
             ClockValue1[1] += 1;
-
+            //if the value at clock2 is greater than at clock1 assign value of clock2
             if (ClockValue1[0] < ClockValue2[0]) {
                 ClockValue1[0] = ClockValue2[0];
 
@@ -176,10 +228,10 @@ public class ClientUI implements ActionListener {
             }
 
         }
-
+        //check if this clock C so that only its value can be incremented otherwise
         if (clock1 == 'C') {
             ClockValue1[2] += 1;
-
+            //if the value at clock2 is greater than at clock1 assign value of clock2
             if (ClockValue1[1] < ClockValue2[1]) {
                 ClockValue1[1] = ClockValue2[1];
 
@@ -188,22 +240,35 @@ public class ClientUI implements ActionListener {
             }
 
         }
-
+        //once done, write the value to the vector clock file
         WriteVectorClock(clock1, ClockValue1);
 
     }
 
-
+    /***
+     * This function is used to write data to the vector clock file, its paramenter descriptiopn is as given below
+     * @param ClockRealName name of the clock to which we have to write to
+     * @param ClockValue   data which u want to write to the file
+     * @throws IOException
+     */
     void WriteVectorClock(char ClockRealName, int[] ClockValue) throws IOException {
+        //parse folder and write to the file given in parameter
         String ClockName = "./VectorClocks/" + ClockRealName + ".txt";
         FileWriter fw = new FileWriter(ClockName, false);
         BufferedWriter UserQueue = new BufferedWriter(fw);
-        //Write to Queue
+        //content for Queue
         String Content = ClockValue[0] + "," + ClockValue[1] + "," + ClockValue[2];
+        //write to queue
         UserQueue.write(Content);
         UserQueue.close();
     }
 
+    /**
+     * originally interded for prinitng the clock while testing my work, curently not in user.
+     * Just for printing the vector clock
+     *
+     * @param clockname
+     */
     void PrintClock(char clockname) {
         int[] ClockValue = ReadVectorClock(clockname);
         if (clockname == 'A')
@@ -215,6 +280,9 @@ public class ClientUI implements ActionListener {
     }
 
 
+    /***
+     * This is the main client class
+     */
     //https://github.com/SrihariShastry/socketProgramming/blob/master/src/lab1/Client.java
     public class Client {
         //Client class keep up socket and I/O  transfers with server
@@ -232,7 +300,11 @@ public class ClientUI implements ActionListener {
             this.ClientInterface = ClientInterface;
         }
 
-
+        /**
+         * to get the client username
+         *
+         * @return
+         */
         //get  function for client username
         public String getUsername() {
             return clientUsrnm;
@@ -314,12 +386,17 @@ public class ClientUI implements ActionListener {
             public void run() {
 
                 while (true) {
-
+                    /**
+                     * This is task created for randomly pining and sending it vector clock to other two users
+                     */
                     TimerTask task = new TimerTask() {
 
                         @Override
                         public void run() {
                             System.out.println("Sent Vector Clock Randomly");
+                            /**
+                             * here for each client A, B and C a random client will chosen and will send the vector  clock to it
+                             */
                             char random_clientA = new Random().nextBoolean() ? 'B' : 'C';
                             char random_clientB = new Random().nextBoolean() ? 'A' : 'C';
                             char random_clientC = new Random().nextBoolean() ? 'A' : 'B';
@@ -347,7 +424,10 @@ public class ClientUI implements ActionListener {
                     };
 
                     Timer timer = new Timer();
-                    timer.schedule(task, new Date(), 90000);
+                    /**
+                     * the clock is set for a timer of 10seconds after which it will send the vector time clock
+                     */
+                    timer.schedule(task, new Date(), 10000);
 
                     try {
                         String[] response = (String[]) iStream.readObject();
@@ -590,7 +670,9 @@ public class ClientUI implements ActionListener {
             ClientRqst[6] = client.getUsername();
 
             System.out.println("Print value of ClientRqst[6].charAt(0): " + ClientRqst[6].charAt(0));
-
+            /**
+             * This where the vector clock is called so that the value can be parsed and usernames can be sent
+             */
             try {
                 VectorClockAlgorithm(to.charAt(0), ClientRqst[6].charAt(0));
             } catch (IOException e) {
@@ -627,6 +709,13 @@ public class ClientUI implements ActionListener {
                     client.sendMessage(ClientRqst2);
             }
             TxtMsgField.setText("");
+            /**
+             * prinitng the vector clock after each reply to the user panel
+             */
+            String vectorName = client.getUsername();
+            int[] ClockValue = ReadVectorClock(vectorName.charAt(0));
+            client.PrintMsg("Clock" + vectorName.charAt(0) + ":" + Arrays.toString(ClockValue));
+
         } else if (ClientObj == CheckMsg) {
             //queuing logic to first check is user is online or not to decide to write to queue or send message
             boolean isClientOnline;
@@ -673,7 +762,10 @@ public class ClientUI implements ActionListener {
                     client.sendMessage(MessageQueueing);
                 }
             }
-        } else if (ClientObj == ConnectBtn) {
+        }
+        /**
+         */
+        else if (ClientObj == ConnectBtn) {
             String clientUsrnm = UsrTxt.getText().trim();
             String portNumber = PortTxtNo.getText().trim();
             //check if either of username or port no is empty
@@ -711,6 +803,11 @@ public class ClientUI implements ActionListener {
     }
 
     //This functions  is to get the client connected to server actively now
+
+    /***
+     * This used to updated the current client online
+     * @param response is the parmeter containing unicast, broadcast or multicast message
+     */
     public void updateClientList(String[] response) {
         String[] list = response[6].split(",");
         String[] list2 = response[6].split(",");

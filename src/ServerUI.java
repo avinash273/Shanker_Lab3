@@ -4,12 +4,17 @@ Roll No: 1001668570
 ID: AXS8570
 University of Texas, Arlington
 Distributed Systems Lab3
+Vector Clocks
 */
 
 /* This Code starts the server GUI, run this code first before starting client. */
 
 //imports
 //References are included in the code
+
+/**
+ * All the imports are used here
+ */
 
 import java.io.*;
 import java.net.*;
@@ -26,6 +31,10 @@ import java.time.LocalDateTime;
 
 
 //Server GUI which implements ActionListener responsible for setting up server and communicate with client
+
+/**
+ * This is server UI action listener class used to track user commands from the GUI pane
+ */
 public class ServerUI implements ActionListener, WindowListener {
     //Variable and object declarations
     Server server;
@@ -573,6 +582,12 @@ public class ServerUI implements ActionListener, WindowListener {
     }
 
     //main class to invoke ServerUI
+
+    /**
+     * This is main class of my program for server.
+     * Multiple calls are done here.
+     * @param args
+     */
     public static void main(String[] args) {
         /*
         //https://www.w3schools.com/java/java_files_create.asp
