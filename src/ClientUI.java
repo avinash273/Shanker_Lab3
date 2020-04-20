@@ -675,12 +675,6 @@ public class ClientUI implements ActionListener {
             /**
              * This where the vector clock is called so that the value can be parsed and usernames can be sent
              */
-            try {
-                VectorClockAlgorithm(to.charAt(0), ClientRqst[6].charAt(0));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
 
             //queuing logic to first check is user is online or not to decide to write to queue or send message
             boolean isClientOnline;
@@ -704,8 +698,25 @@ public class ClientUI implements ActionListener {
              */
             String vectorName = client.getUsername();
             String toVector = to;
-            int[] ClockValueTo = ReadVectorClock(toVector.charAt(0));
+
+
+            try {
+                VectorClockAlgorithm(to.charAt(0), ClientRqst[6].charAt(0));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             int[] ClockValue = ReadVectorClock(vectorName.charAt(0));
+            int[] ClockValueTo = ReadVectorClock(toVector.charAt(0));
+
+            if(ClockValueTo[0] < ClockValue[0])
+                ClockValueTo[0] = ClockValue[0];
+
+            if(ClockValueTo[1] < ClockValue[1])
+                ClockValueTo[1] = ClockValue[1];
+
+            if(ClockValueTo[2] < ClockValue[2])
+                ClockValueTo[2] = ClockValue[2];
 
             //broadcast message type
             if (ClientRqst[2].contains("broadcast")) {
