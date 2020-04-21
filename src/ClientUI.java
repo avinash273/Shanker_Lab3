@@ -242,6 +242,12 @@ public class ClientUI implements ActionListener {
         }
         //once done, write the value to the vector clock file
         WriteVectorClock(clock1, ClockValue1);
+        /**
+         * This part of code is to write the clock value to clien after each 10 seconds update of vector clock
+         * But, commented as it too many messages on the client GUI, just uncomment to view 10 second clock
+         */
+//        String send = "Clock(10Second): " + clock1 + " : " + Arrays.toString(ClockValue1);
+//        client.PrintMsg(send);
 
     }
 
@@ -709,13 +715,13 @@ public class ClientUI implements ActionListener {
             int[] ClockValue = ReadVectorClock(vectorName.charAt(0));
             int[] ClockValueTo = ReadVectorClock(toVector.charAt(0));
 
-            if(ClockValueTo[0] < ClockValue[0])
+            if (ClockValueTo[0] < ClockValue[0])
                 ClockValueTo[0] = ClockValue[0];
 
-            if(ClockValueTo[1] < ClockValue[1])
+            if (ClockValueTo[1] < ClockValue[1])
                 ClockValueTo[1] = ClockValue[1];
 
-            if(ClockValueTo[2] < ClockValue[2])
+            if (ClockValueTo[2] < ClockValue[2])
                 ClockValueTo[2] = ClockValue[2];
 
             //broadcast message type
