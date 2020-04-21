@@ -23,7 +23,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.Timer;
 
-//This Action listner class if used for client UI
+//This Action listener class if used for client UI
 
 /**
  * This is the main client UI class used as a action listener
